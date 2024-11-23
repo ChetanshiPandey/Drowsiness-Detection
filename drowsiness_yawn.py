@@ -69,8 +69,7 @@ def lip_distance(shape):
 ap = argparse.ArgumentParser()
 ap.add_argument("-w", "--webcam", type=int, default=0,
                 help="index of webcam on system")
-ap.add_argument("-a", "--ala
-rm", type=str, default=r"C:\Users\chetanshi\OneDrive\Desktop\Drowsiness\Alert.wav", help="path alarm .WAV file")
+ap.add_argument("-a", "--alarm", type=str, default=r"C:\Users\chetanshi\OneDrive\Desktop\Drowsiness\Alert.wav", help="path alarm .WAV file")
 args = vars(ap.parse_args())
 
 if not os.path.isfile(args["alarm"]):
@@ -96,6 +95,10 @@ print("-> Starting Video Stream")
 vs = VideoStream(src=args["webcam"]).start()
 #vs= VideoStream(usePiCamera=True).start()       //For Raspberry Pi
 time.sleep(1.0)
+
+cv2.namedWindow("Frame", cv2.WND_PROP_FULLSCREEN)
+cv2.setWindowProperty("Frame", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+
 
 while True:
 
