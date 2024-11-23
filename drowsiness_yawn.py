@@ -12,6 +12,9 @@ import dlib
 import cv2
 import playsound
 import os
+from tkinter import Tk, Label, Button, BooleanVar, Checkbutton
+from tkinter.messagebox import showinfo
+
 
 
 def sound_alarm(path):
@@ -65,6 +68,40 @@ def lip_distance(shape):
     distance = abs(top_mean[1] - low_mean[1])
     return distance
 
+def start_detection():
+    global detection_running
+    detection_running = True
+    showinfo("Detection", "Drowsiness detection started!")
+
+def stop_detection():
+    global detection_running
+    detection_running = False
+    showinfo("Detection", "Drowsiness detection stopped!")
+
+def toggle_alarm():
+    global alarm_enabled
+    alarm_enabled = alarm_var.get()
+    status = "enabled" if alarm_enabled else "disabled"
+    showinfo("Alarm", f"Alarm {status}!")
+
+# Initialize Tkinter window
+root = Tk()
+root.title("Drowsiness Detection")
+root.geometry("400x200")
+
+# Create GUI elements
+start_button = Button(root, text="Start Detection", command=start_detection, width=20)
+start_button.pack(pady=10)
+
+stop_button = Button(root, text="Stop Detection", command=stop_detection, width=20)
+stop_button.pack(pady=10)
+
+alarm_var = BooleanVar()
+alarm_var.set(True)  # Default to enabled
+alarm_checkbox = Checkbutton(root, text="Enable Alarm", variable=alarm_var, command=toggle_alarm)
+alarm_checkbox.pack(pady=10)
+
+root.mainloop()
 
 ap = argparse.ArgumentParser()
 ap.add_argument("-w", "--webcam", type=int, default=0,
@@ -183,9 +220,5 @@ while True:
 cv2.destroyAllWindows()
 vs.stop()
 
-#Mouth--Done
-#Eyes--Done
-#Sound--Done
-#Head bend
-#Frame size
+
 
