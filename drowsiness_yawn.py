@@ -136,9 +136,15 @@ def run_detection():
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
         # Detect faces in the frame
-        rects = detector.detectMultiScale(gray, scaleFactor=1.1,
-                                          minNeighbors=5, minSize=(30, 30),
-                                          flags=cv2.CASCADE_SCALE_IMAGE)
+        rects = detector.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30),flags=cv2.CASCADE_SCALE_IMAGE)
+        
+        # Initialize messages and colors
+        alert_message = ""
+        wakeup_message = "Wake up You are drowsy"
+        ear_color = (0, 255, 0)  # Green
+        mor_color = (0, 255, 0)  # Green
+        nlr_color = (0, 255, 0)  # Green
+
         for (x, y, w, h) in rects:
             rect = dlib.rectangle(int(x), int(y), int(x + w), int(y + h))
             shape = predictor(gray, rect)
@@ -161,8 +167,10 @@ def run_detection():
             # Check drowsiness conditions
             if ear < EYE_AR_THRESH:
                 COUNTER += 1
+                ear_color = (0, 0, 255)
                 if COUNTER >= EYE_AR_CONSEC_FRAMES and not alarm_status:
                     alarm_status = True
+                    alert_message = "Eyes Close"
                     if args["alarm"] != "":
                         t = Thread(target=sound_alarm, args=(args["alarm"],))
                         t.daemon = True
@@ -174,6 +182,8 @@ def run_detection():
 
             # Check yawning conditions
             if distance > YAWN_THRESH:
+                mor_color = (0, 0, 255)  # Red
+                alert_message = "Yawning"
                 if not alarm_status2 and not saying:
                     alarm_status2 = True
                     if args["alarm"] != "":
@@ -186,6 +196,8 @@ def run_detection():
             
             # Check head bending conditions (NLR)
             if nlr < 0.8 or nlr > 1.2:  # Adjust thresholds based on calibration and testing
+                nlr_color = (0, 0, 255)  # Red
+                alert_message = "Head Bend"
                 cv2.putText(frame, "HEAD BENDING ALERT!", (10, 90), 
                 cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2) 
                 if not alarm_status2 and not saying:
@@ -194,6 +206,18 @@ def run_detection():
                         t = Thread(target=sound_alarm, args=(args["alarm"],))
                         t.daemon = True
                         t.start()
+
+                        # Combine the wake-up message if any alert is active
+            if alert_message:
+                cv2.putText(frame, wakeup_message, (10, 120), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+
+            # Display the current EAR, MOR, and NLR
+            cv2.putText(frame, f"EAR: {ear:.2f}", (frame.shape[1] - 150, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, ear_color, 2)
+            cv2.putText(frame, f"MOR: {distance:.2f}", (frame.shape[1] - 150, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, mor_color, 2)
+            cv2.putText(frame, f"NLR: {nlr:.2f}", (frame.shape[1] - 150, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.7, nlr_color, 2)
+
+            # Show the alert message
+            cv2.putText(frame, alert_message, (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
 
         cv2.namedWindow("Frame", cv2.WND_PROP_FULLSCREEN)
         cv2.setWindowProperty("Frame", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
