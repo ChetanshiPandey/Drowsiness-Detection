@@ -1,6 +1,3 @@
-#python drowsiness_yawn.py --webcam webcam_index
-
-
 # Import necessary libraries
 from scipy.spatial import distance as dist
 from imutils.video import VideoStream
@@ -16,6 +13,12 @@ import playsound
 import os
 from tkinter import Tk, Label, Button, BooleanVar, Checkbutton
 from tkinter.messagebox import showinfo
+from tkinter import Tk, Button, BooleanVar, Checkbutton
+
+start_button = None  # Initialize globally for Tkinter button references
+stop_button = None
+alarm_var = None
+
 
 # Global variables for controlling detection
 detection_running = False  # To track whether detection is running
@@ -104,6 +107,12 @@ def run_detection():
     global COUNTER, alarm_status, alarm_status2, saying, detection_running
     vs = VideoStream(src=args["webcam"]).start()
     time.sleep(1.0)  # Allow the camera to warm up
+    
+    overlay_root = create_overlay_window() # Create Tkinter window with buttons
+    # Enable/disable appropriate buttons
+    start_button.config(state="disabled")  # Disable start button when detection starts
+    stop_button.config(state="normal")    # Enable stop button
+
 
     while detection_running:
         frame = vs.read()
@@ -156,12 +165,43 @@ def run_detection():
             else:
                 alarm_status2 = False
 
-        cv2.imshow("Frame", frame)
+        cv2.namedWindow("Frame", cv2.WND_PROP_FULLSCREEN)
+        cv2.setWindowProperty("Frame", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+        cv2.imshow("Frame", frame) # Show the OpenCV window with video frame
+        
+        overlay_root.update()  # Update the Tkinter overlay window
+
         if cv2.waitKey(1) & 0xFF == ord("q"):
             break
 
     vs.stop()
     cv2.destroyAllWindows()
+    start_button.config(state="normal")  # Re-enable start button when stopped
+    stop_button.config(state="disabled")  # Disable stop button
+    overlay_root.quit()  # Close Tkinter window when done
+
+# Create the Tkinter window for the overlay (floating buttons)
+
+def create_overlay_window():
+    global start_button, stop_button, alarm_var  # Use global references for buttons
+    overlay_root = Tk()
+    overlay_root.title("Detection Controls")
+    overlay_root.geometry("300x100+200+200")  # Positioning the window
+    overlay_root.attributes("-topmost", True)  # Keep window on top
+
+    start_button = Button(overlay_root, text="Start Detection", command=start_detection, width=20)
+    start_button.place(x=10, y=10)
+
+    stop_button = Button(overlay_root, text="Stop Detection", command=stop_detection, width=20, state="disabled")
+    stop_button.place(x=10, y=50)
+
+    alarm_var = BooleanVar()
+    alarm_var.set(True)  # Default to enabled
+    alarm_checkbox = Checkbutton(overlay_root, text="Enable Alarm", variable=alarm_var, command=toggle_alarm)
+    alarm_checkbox.place(x=150, y=10)
+
+    return overlay_root
+
 
 # Argument parser for command-line arguments
 ap = argparse.ArgumentParser()
@@ -183,20 +223,17 @@ root = Tk()
 root.title("Drowsiness Detection")
 root.geometry("400x200")
 
+root.update_idletasks()
+
 start_button = Button(root, text="Start Detection", command=start_detection, width=20)
-start_button.pack(pady=10)
+start_button.place(x=50, y=50)
 
 stop_button = Button(root, text="Stop Detection", command=stop_detection, width=20, state="disabled")
-stop_button.pack(pady=10)
+stop_button.place(x=50, y=100)
 
 alarm_var = BooleanVar()
-alarm_var.set(True)  # Default to enabled
+alarm_var.set(True)
 alarm_checkbox = Checkbutton(root, text="Enable Alarm", variable=alarm_var, command=toggle_alarm)
-alarm_checkbox.pack(pady=10)
+alarm_checkbox.place(x=50, y=150)
 
 root.mainloop()
-
-
-
-
-
