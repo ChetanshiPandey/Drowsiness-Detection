@@ -75,6 +75,22 @@ def lip_distance(shape):
     distance = abs(top_mean[1] - low_mean[1])
     return distance
 
+
+# Function to calculate the Nose Length Ratio (NLR)
+def nose_length_ratio(shape, avg_nose_length):
+    """
+    Calculate the Nose Length Ratio (NLR) to detect head bending.
+    shape: Detected facial landmarks.
+    avg_nose_length: Pre-calculated average nose length in a normal state.
+    """
+    nose_tip = shape[30]  # Nose tip (landmark 30)
+    nose_base = shape[27]  # Nose base (landmark 27)
+    # Compute the Euclidean distance between the nose tip and base
+    current_nose_length = dist.euclidean(nose_tip, nose_base)
+    # Calculate the ratio
+    nlr = current_nose_length / avg_nose_length
+    return nlr
+
 # Function to start the detection process
 def start_detection():
     global detection_running, detection_thread
@@ -128,8 +144,11 @@ def run_detection():
             shape = predictor(gray, rect)
             shape = face_utils.shape_to_np(shape)
 
+            # Calculate EAR and MOR
             ear, leftEye, rightEye = final_ear(shape)
             distance = lip_distance(shape)
+            # Calculate NLR
+            nlr = nose_length_ratio(shape, avg_nose_length)
 
             # Visualize eyes and lips
             leftEyeHull = cv2.convexHull(leftEye)
@@ -164,6 +183,17 @@ def run_detection():
                 cv2.putText(frame, "Yawn Alert", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
             else:
                 alarm_status2 = False
+            
+            # Check head bending conditions (NLR)
+            if nlr < 0.8 or nlr > 1.2:  # Adjust thresholds based on calibration and testing
+                cv2.putText(frame, "HEAD BENDING ALERT!", (10, 90), 
+                cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2) 
+                if not alarm_status2 and not saying:
+                    alarm_status2 = True
+                    if args["alarm"] != "":
+                        t = Thread(target=sound_alarm, args=(args["alarm"],))
+                        t.daemon = True
+                        t.start()
 
         cv2.namedWindow("Frame", cv2.WND_PROP_FULLSCREEN)
         cv2.setWindowProperty("Frame", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
@@ -217,6 +247,36 @@ if not os.path.isfile(args["alarm"]):
 print("-> Loading the predictor and detector...")
 detector = cv2.CascadeClassifier("haarcascade_frontalface_default.xml")  # Faster but less accurate
 predictor = dlib.shape_predictor('shape_predictor_68_face_landmarks.dat')
+
+print("-> Starting Video Stream...")
+vs = VideoStream(src=args["webcam"]).start()
+time.sleep(1.0)  # Allow the camera to warm up
+
+# Calibrate the average nose length
+print("-> Calibrating nose length...")
+avg_nose_length = 0
+calibration_frames = 50  # Number of frames for calibration
+frame_count = 0
+
+while frame_count < calibration_frames:
+    frame = vs.read()
+    frame = imutils.resize(frame, width=450)
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    rects = detector.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30), flags=cv2.CASCADE_SCALE_IMAGE)
+    
+    for (x, y, w, h) in rects:
+        rect = dlib.rectangle(int(x), int(y), int(x + w), int(y + h))
+        shape = predictor(gray, rect)
+        shape = face_utils.shape_to_np(shape)
+
+        # Calculate the nose length for this frame
+        nose_tip = shape[30]
+        nose_base = shape[27]
+        avg_nose_length += dist.euclidean(nose_tip, nose_base)
+        frame_count += 1
+
+avg_nose_length /= calibration_frames  # Finalize the average nose length
+print(f"Calibrated Average Nose Length: {avg_nose_length:.2f}")
 
 # Initialize Tkinter GUI
 root = Tk()
