@@ -195,7 +195,7 @@ def run_detection():
                 alarm_status2 = False
             
             # Check head bending conditions (NLR)
-            if nlr < 0.8 or nlr > 1.2:  # Adjust thresholds based on calibration and testing
+            if nlr < 0.6 or nlr > 1.4:  # Adjust thresholds based on calibration and testing
                 nlr_color = (0, 0, 255)  # Red
                 alert_message = "Head Bend"
                 cv2.putText(frame, "HEAD BENDING ALERT!", (10, 90), 
