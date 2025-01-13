@@ -55,6 +55,7 @@ outlines the flow of operations in a Drowsiness Detection System using computer 
 ![alt text](http://url/to/img.png)
 
 
+<<<<<<< HEAD
 
 ## System Requirement
 
@@ -80,3 +81,8 @@ The ML algorithms used in this project are:
 3. Dlib machine learning library:- dlib’s pre-trained model (shape predictor) uses a trained dataset to detect and track facial landmarks for eyes and mouth in each frame. The 68-point facial landmark model used for detecting eyes and lips is based on the work of Kazemi and Sullivan (2014) in their paper "One Millisecond Face Alignment with an Ensemble of Regression Trees". This model is integrated into the dlib library for robust real-time face landmark detection.
 4. Eye Aspect Ratio (EAR):- The eye aspect ratio was introduced by Tereza Soukup ova and Jan Cech in their paper titled "Real-Time Eye Blink Detection using Facial Landmarks" (2016). In this work, they proposed using the EAR as a reliable measure for blink detection, which can be extended to detect drowsiness. The EAR formula used in my code comes directly from their method, where they set the EAR threshold at 0.3 based on experimental data.
 5. Mouth Open Ratio (MOR):- MOR is widely used in research for yawning detection. One such paper is "Yawning Detection for Monitoring Driver’s Drowsiness Based on Two Visual Features" (2015), which analyses lip distances and yawning behaviours.
+=======
+Graphs 
+envi. effect 
+NLR 
+>>>>>>> 6b59ef7 (Initial commit)
